@@ -28,15 +28,21 @@ since it is not nessicary to have them in separate files any more
 
 * Delete references to the old program
 
-* Move the database name, subreddit to log, and subreddit to post to to `credentials.json`
-to make it possible to easily run the program with other subreddits
-
-* Automatically create the table when it doesn't exist
+* Make graph look better
 
 ## Your `credentials.json` should be something like the following:
 
 ```
 {
+    "subredditstream": "subredditforlogging",
+    "subredditpost": "subredditforstats",
+    "database": "YourDatabasePath.db",
+    "bots":
+    [
+        "AutoModerator",
+        "RepostSentinel",
+        "MAGIC_EYE_BOT"
+    ],
     "redditapi":
     {
         "client_id": "xxxxxxxxxxxxxx",

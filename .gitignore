@@ -1,7 +1,9 @@
 credentials.json
 *.txt
+*.db
 graph.py
 graph.png
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

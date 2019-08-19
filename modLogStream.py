@@ -9,14 +9,25 @@ import sqlite3
 import login
 import praw
 import time
+import os
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 class Database:
     def __init__(self):
-        self.connection = sqlite3.connect("ComedyHeavenModLog.db")
+        if not os.path.exists(os.path.join(os.getcwd(), login.data["database"])):
+            self._create_table()
+        else:
+            self.connection = sqlite3.connect(login.data["database"])
+            self.cursor = self.connection.cursor()
+
+    def _create_table(self):
+        self.connection = sqlite3.connect(login.data["database"])
         self.cursor = self.connection.cursor()
+        print("Creating table...")
+        self.cursor.execute("CREATE TABLE log(log_id INTEGER PRIMARY KEY, mod TEXT NOT NULL, action TEXT NOT NULL, DATE UNSIGNED INTEGER, permalink TEXT NULL, notes TEXT NULL, id TEXT);")
+        self.connection.commit()
 
     def add_action(self, id, mod, action, date, permalink, notes, notes2):
         if id in self.get_ids():
@@ -71,9 +82,9 @@ class Database:
         weeklycutoff = time.time() - (60 * 60 * 24 * 7)
         dailyactions = {}
         weeklyactions = {}
-        for mod in login.REDDIT.subreddit("comedyheaven").moderator():
+        for mod in login.REDDIT.subreddit(login.data["subredditstream"]).moderator():
             mod = str(mod)
-            if mod not in ["MAGIC_EYE_BOT", "AutoModerator", "RepostSentinel"]:
+            if mod not in login.data["bots"]:
                 dailyactions[mod] = [i[1] for i in get_actions_after(mod, dailycutoff)]
                 weeklyactions[mod] = [i[1] for i in get_actions_after(mod, weeklycutoff)]
 
@@ -96,7 +107,7 @@ def onceaday():
 
     print("Started posting to reddit...")
     date = str(datetime.date.today())
-    submission = login.REDDIT.subreddit("u_jwnskanzkwk").submit("/r/comedyheaven Mod Actions: %s" % date, url = imgururl)
+    submission = login.REDDIT.subreddit(login.data["subredditpost"]).submit("/r/%s Mod Actions: %s" % (login.data["subredditstream"], date), url = imgururl)
     submission.reply(redditout).mod.distinguish(sticky = True)
     print("Posted to reddit.")
 
@@ -117,9 +128,9 @@ def onceaday():
 
 def process_actions(actions, weekactions):
     discordout = "For a detailed list, click above.```"
-    redditout = "\n\n#/r/ComedyHeaven moderator actions"
+    redditout = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
     discorddata = {}
-    for mod in [str(username) for username in login.REDDIT.subreddit("comedyheaven").moderator() if str(username) not in ["AutoModerator", "RepostSentinel", "MAGIC_EYE_BOT"]]:
+    for mod in [str(username) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]:
         discorddata[mod] = []
     for i, periodactions in enumerate((actions, weekactions), 0):
         if i == 0:
@@ -142,7 +153,7 @@ def process_actions(actions, weekactions):
         redditout += "\n\n###Actions per moderator:\n\nModerator|Times done|Percentage\n:--|:--|:--"
         for mod, actionlist in periodactions.items():
             mod = str(mod)
-            if mod not in ["AutoModerator", "RepostSentinel", "MAGIC_EYE_BOT"]:
+            if mod not in login.data["bots"]:
                 discorddata[mod] += [len(actionlist), int((len(actionlist)/len(allactions))*100)]
                 redditout += "\n%s|%i|%.2f%%" % (mod, len(actionlist), (len(actionlist)/len(allactions))*100)
 
@@ -152,7 +163,7 @@ def process_actions(actions, weekactions):
             redditout += "\n%s|%s" % (action, times)
         redditout += "\nTotal|%s" % len(allactions)
 
-    longestusername = max([len(str(username)) for username in login.REDDIT.subreddit("comedyheaven").moderator()])
+    longestusername = max([len(str(username)) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator()])
     discordout += "\n%-{0}s %s %s  %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "-"*(longestusername + 19))
 
     for mod, data in discorddata.items():
@@ -251,9 +262,9 @@ def upload_image(path):
 
     config = {
 		'album': None,
-		'name':  '/r/comedyheaven statistics graph: %s' % date,
-		'title': '/r/comedyheaven statistics graph: %s' % date,
-		'description': '/r/comedyheaven statistics graph: %s' % date
+		'name':  '/r/%s statistics graph: %s' % (login.data["subredditstream"], date),
+		'title': '/r/%s statistics graph: %s' % (login.data["subredditstream"], date),
+		'description': '/r/%s statistics graph: %s' % (login.data["subredditstream"], date),
     }
 
     image = client.upload_from_path(path, config = config)
@@ -262,7 +273,7 @@ def upload_image(path):
 
 def stream_actions():
     db = Database()
-    subreddit = login.REDDIT.subreddit("comedyheaven")
+    subreddit = login.REDDIT.subreddit(login.data["subredditstream"])
     for log in praw.models.util.stream_generator(subreddit.mod.log, attribute_name = "id"):
         db.add_action(str(log.id), str(log.mod), log.action, int(log.created_utc), log.target_permalink, log.details, log.description)
 

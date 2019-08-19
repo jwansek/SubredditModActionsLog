@@ -26,5 +26,3 @@ class Discord:
 IMGUR = imgurpython.ImgurClient(data["imgurapi"]["client_id"], data["imgurapi"]["client_secret"])
 
 DISCORD = Discord()
-
-
