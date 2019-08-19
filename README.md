@@ -3,9 +3,9 @@
 Logs moderator actions into a database. Also posts moderator statistics to a discord webhook
 and detailed statistics to a subreddit, with graphs, which look like this:
 
-![Graph example](https://i.imgur/VTR2Fam.png)
+[Graph example](https://i.imgur/VTR2Fam.png)
 
-![Discord example](https://i.imgur/8LCdW98.png)
+[Discord example](https://i.imgur/8LCdW98.png)
 
 There are two programs involved:
 
