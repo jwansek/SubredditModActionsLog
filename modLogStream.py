@@ -169,7 +169,8 @@ def process_actions(actions, weekactions):
     for mod, data in discorddata.items():
         discordout += "\n%-{0}s %3s %2s%%  %4s %3s%%".format(longestusername) % (mod, data[0], data[1], data[2], data[3])
 
-    discordout += "```\n(Bots aren't included)"
+    discordout += "```\n(Bots aren't included)\nMade by jwnskanzkwk#9757"
+    redditout += "\n\nMade by /u/jwnskanzkwk. [Source code](https://github.com/jwansek/SubredditModActionsLog)"
 
     return redditout, discordout
 

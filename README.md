@@ -66,3 +66,18 @@ to make it possible to easily run the program with other subreddits
     }
 }
 ```
+
+## Setup tutorial
+
+* Download python and pip on your system
+
+* Download the code, click 'Clone or download' above
+
+* Download the dependencies: `pip install -r requirements.txt`
+
+* Create a `credentials.json` file in the same directory as everything else and
+populate it with the correct data
+
+* Start a `tmux` instance and run `python modLogStream.py` to start logging actions
+
+* Start another `tmux` instance and run `onceaday.py`

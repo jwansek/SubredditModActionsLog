@@ -1,5 +1,6 @@
 credentials.json
-*.txt
+discord.txt
+reddit.txt
 *.db
 graph.py
 graph.png
