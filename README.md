@@ -16,8 +16,9 @@ graph, then posts them to reddit and discord
 
 * `oldLogProg.py` is an older version of the program which didn't stream actions,
 but worked them all out at once. This was horribly ineffieient, requiring disk I/O
-for week old actions and sometimes taking ovre 40 minutes to run. It's kept in case
-the stream shuts down for some reason.
+for week old actions and sometimes taking ovre 40 minutes to run. The posting parts
+of it have been commented out, so you can use it to put actions in the database if
+the stream program goes down for a while.
 
 ## TODO
 
@@ -37,6 +38,7 @@ to make it possible to easily run the program with other subreddits
 
 ```
 {
+    "production": 1,
     "subredditstream": "subredditforlogging",
     "subredditpost": "subredditforstats",
     "database": "YourDatabasePath.db",

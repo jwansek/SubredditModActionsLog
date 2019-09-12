@@ -4,6 +4,8 @@ reddit.txt
 *.db
 graph.py
 graph.png
+data.json
+weekactions.json
 .vscode/
 
 # Byte-compiled / optimized / DLL files

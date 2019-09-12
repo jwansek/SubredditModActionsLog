@@ -3,13 +3,15 @@ import json
 import praw
 import os
 
-PRODUCTION = True
+with open("credentials.json", "r") as f:
+    data = json.load(f)
+
+PRODUCTION = bool(data["production"])
+
 if PRODUCTION and os.path.exists("data.json"):
     os.remove("weekactions.json")
     os.remove("data.json")
 
-with open("credentials.json", "r") as f:
-    data = json.load(f)
 
 REDDIT = praw.Reddit(
     client_id = data["redditapi"]["client_id"],

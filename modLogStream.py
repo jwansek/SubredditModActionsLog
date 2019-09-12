@@ -108,61 +108,57 @@ def onceaday():
     print("Started posting to reddit...")
     date = str(datetime.date.today())
     submission = login.REDDIT.subreddit(login.data["subredditpost"]).submit("/r/%s Mod Actions: %s" % (login.data["subredditstream"], date), url = imgururl)
-    print("Length:", len(redditout))
-    submission.reply("Data too long to be put here. Will be fixed soon.").mod.distinguish(sticky = True)
+    if len(redditout) >= 10000:
+        submission.reply("Data too long to be put here. Will be fixed soon.").mod.distinguish(sticky = True)
+    else:
+        submission.reply(redditout).mod.distinguish(sticky = True)
     print("Posted to reddit.")
 
     print("Started posting to discord...")
     webhook.send_message("https://reddit.com" + submission.permalink, discordout, imgururl)
     print("Posted on discord.")
 
-    try:
-        submission.mod.sfw()
-    except Exception as e:
-        print(e)
-    try:
-        submission.mod.distinguish(sticky = True)
-    except Exception as e:
-        print(e)
     print("Finished at", str(datetime.datetime.now()), "took", time.time() - start, "seconds.\n")
 
+def get_mods():
+    """Returns a list of mods not in the blacklist"""
+    return [str(username).replace("-", "_") for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]
 
 def process_actions(actions, weekactions):
     discordout = "For a detailed list, click above.```"
     redditout = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
     discorddata = {}
-    for mod in [str(username) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]:
+    for mod in get_mods():
         discorddata[mod] = []
     for i, periodactions in enumerate((actions, weekactions), 0):
         if i == 0:
             redditout += "\n\n##In the last 24h:"
         else:
             redditout += "\n\n##7 day rollover actions:"
+        actionstable = {}
+        allactions = 0
         
         #work out actions for each mod
+        #this new method is pretty slow sadly
         for mod, actionlist in periodactions.items():
-            redditout += "\n\n###%s's actions:\n\nAction|Times Done:\n:--|:--" % mod
             for action, times in Counter(actionlist).items():
-                redditout += "\n%s|%s" % (action, times)
-            redditout += "\nTotal|%s" % len(actionlist)
+                if action not in actionstable.keys():
+                    actionstable[action] = [0 for i in get_mods()]
 
-        #flat list of all actions
-        allactions = list(itertools.chain(*periodactions.values()))
-        #length of the longest mod's name. Needed for string formatting later
+                actionstable[action][get_mods().index(mod)] = times
+                allactions += times
 
         #work out number of actions per mod
-        redditout += "\n\n###Actions per moderator:\n\nModerator|Times done|Percentage\n:--|:--|:--"
         for mod, actionlist in periodactions.items():
-            mod = str(mod)
+            mod = str(mod).replace("-", "_")
             if mod not in login.data["bots"]:
-                discorddata[mod] += [len(actionlist), int((len(actionlist)/len(allactions))*100)]
-                redditout += "\n%s|%i|%.2f%%" % (mod, len(actionlist), (len(actionlist)/len(allactions))*100)
+                discorddata[mod] += [len(actionlist), int((len(actionlist)/allactions)*100)]
 
-        #work out all mod actions
-        redditout += "\n\n###All moderators:\n\nAction|Times Done:\n:--|:--"
-        for action, times in Counter(allactions).items():
-            redditout += "\n%s|%s" % (action, times)
-        redditout += "\nTotal|%s" % len(allactions)
+        redditout += "\n\n**Action**|**" + "**|**".join(get_mods()) + "**|**Total**"
+        redditout += "\n:--%s" % ("|:--"*(len(get_mods())+1))
+        for action, times in actionstable.items():
+            redditout += "\n**%s**|%s|%i" % (action, "|".join([str(i) for i in times]), sum(times))
+        redditout += "\n**Total**|%s|**%i**" % ("|".join(["%i (%i%%)" % (i[0], i[1]) for i in discorddata.values()]), allactions)
 
     longestusername = max([len(str(username)) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator()])
     discordout += "\n%-{0}s %s %s  %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "-"*(longestusername + 19))
@@ -171,7 +167,7 @@ def process_actions(actions, weekactions):
         discordout += "\n%-{0}s %3s %2s%%  %4s %3s%%".format(longestusername) % (mod, data[0], data[1], data[2], data[3])
 
     discordout += "```\n(Bots aren't included)\nMade by jwnskanzkwk#9757"
-    redditout += "\n\nMade by /u/jwnskanzkwk. [Source code](https://github.com/jwansek/SubredditModActionsLog)"
+    redditout += "\n\nIf your screen is to small to display, use <Ctrl+-> to zoom out.\n\nMade by /u/jwnskanzkwk. [Source code](https://github.com/jwansek/SubredditModActionsLog)"
 
     return redditout, discordout
 
