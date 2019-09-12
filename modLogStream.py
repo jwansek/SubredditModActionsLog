@@ -108,7 +108,8 @@ def onceaday():
     print("Started posting to reddit...")
     date = str(datetime.date.today())
     submission = login.REDDIT.subreddit(login.data["subredditpost"]).submit("/r/%s Mod Actions: %s" % (login.data["subredditstream"], date), url = imgururl)
-    submission.reply(redditout).mod.distinguish(sticky = True)
+    print("Length:", len(redditout))
+    submission.reply("Data too long to be put here. Will be fixed soon.").mod.distinguish(sticky = True)
     print("Posted to reddit.")
 
     print("Started posting to discord...")

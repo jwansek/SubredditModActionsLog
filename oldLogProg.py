@@ -136,7 +136,7 @@ def send_data(redditout, discordout):
 
 def onceaday():
     redditout, discordout = process_actions()
-    send_data(redditout, discordout)
+    #send_data(redditout, discordout)
 
 if __name__ == "__main__":
     while True:
