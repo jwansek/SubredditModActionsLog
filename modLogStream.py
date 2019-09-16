@@ -7,6 +7,7 @@ import datetime
 import webhook
 import sqlite3
 import login
+import json
 import praw
 import time
 import os
@@ -275,6 +276,11 @@ def stream_actions():
     for log in praw.models.util.stream_generator(subreddit.mod.log, attribute_name = "id"):
         db.add_action(str(log.id), str(log.mod), log.action, int(log.created_utc), log.target_permalink, log.details, log.description)
 
+def write_pid():
+    with open("modLogStreamPID.json", "w") as f:
+        json.dump(str(os.getpid()), f)
+
 if __name__ == "__main__":
+    write_pid()
     stream_actions()
     #onceaday()
