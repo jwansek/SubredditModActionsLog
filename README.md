@@ -80,6 +80,7 @@ to make it possible to easily run the program with other subreddits
 * Create a `credentials.json` file in the same directory as everything else and
 populate it with the correct data
 
-* Start a `tmux` instance and run `python modLogStream.py` to start logging actions
+* Start a `tmux` instance and run `python3 runprog.py` to start logging actions. The program
+will be run in a thread in case it errors and will reset every 15 minutes
 
 * Start another `tmux` instance and run `onceaday.py`

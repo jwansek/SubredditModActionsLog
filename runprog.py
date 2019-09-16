@@ -4,7 +4,7 @@ import multiprocessing
 import json
 
 def thread_():
-    subprocess.run(["python", "modLogStream.py"])
+    subprocess.run(["python3", "modLogStream.py"])
 
 def main():
     while True:
