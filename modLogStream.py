@@ -115,9 +115,9 @@ def onceaday():
         submission.reply(redditout).mod.distinguish(sticky = True)
     print("Posted to reddit.")
 
-    # print("Started posting to discord...")
-    # webhook.send_message("https://reddit.com" + submission.permalink, discordout, imgururl)
-    # print("Posted on discord.")
+    print("Started posting to discord...")
+    webhook.send_message("https://reddit.com" + submission.permalink, discordout, imgururl)
+    print("Posted on discord.")
 
     print("Finished at", str(datetime.datetime.now()), "took", time.time() - start, "seconds.\n")
 
