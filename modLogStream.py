@@ -115,19 +115,20 @@ def onceaday():
         submission.reply(redditout).mod.distinguish(sticky = True)
     print("Posted to reddit.")
 
-    print("Started posting to discord...")
-    webhook.send_message("https://reddit.com" + submission.permalink, discordout, imgururl)
-    print("Posted on discord.")
+    # print("Started posting to discord...")
+    # webhook.send_message("https://reddit.com" + submission.permalink, discordout, imgururl)
+    # print("Posted on discord.")
 
     print("Finished at", str(datetime.datetime.now()), "took", time.time() - start, "seconds.\n")
 
 def get_mods():
     """Returns a list of mods not in the blacklist"""
-    return [str(username).replace("-", "_") for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]
+    return [str(username)for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]
 
 def process_actions(actions, weekactions):
     discordout = "For a detailed list, click above.```"
     redditout = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
+    redditout2 = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
     discorddata = {}
     for mod in get_mods():
         discorddata[mod] = []
@@ -151,15 +152,27 @@ def process_actions(actions, weekactions):
 
         #work out number of actions per mod
         for mod, actionlist in periodactions.items():
-            mod = str(mod).replace("-", "_")
+            mod = str(mod)
             if mod not in login.data["bots"]:
                 discorddata[mod] += [len(actionlist), int((len(actionlist)/allactions)*100)]
+        
+        if login.data["vertical"]:
+            outtable = []
+            outtable = np.rot90([[key] + value for key, value in actionstable.items()], k=3)
+            totals = [str(np.sum(np.array(i, dtype=int))) for i in np.rot90(outtable[1:], k = 3)]
+            redditout += "\n\n**Moderator/Action**|**" + "**|**".join(outtable[0]) + "**|**Total**"
+            redditout += "\n:--%s" % ("|:--"*(len(totals)+1))
 
-        redditout += "\n\n**Action**|**" + "**|**".join(get_mods()) + "**|**Total**"
-        redditout += "\n:--%s" % ("|:--"*(len(get_mods())+1))
-        for action, times in actionstable.items():
-            redditout += "\n**%s**|%s|%i" % (action, "|".join([str(i) for i in times]), sum(times))
-        redditout += "\n**Total**|%s|**%i**" % ("|".join(["%i (%i%%)" % (i[0], i[1]) for i in discorddata.values()]), allactions)
+            for i, list_ in enumerate(outtable[1:], 0):
+                mod = get_mods()[i]
+                redditout += "\n**%s**|" % mod + "|".join(list_) + "|**%i (%i%%)**" % (discorddata[mod][0], discorddata[mod][1])
+            redditout += "\n**Total**|%s|**%i**" % ("|".join(totals), sum([int(i) for i in totals]))
+        else:  
+            redditout += "\n\n**Action**|**" + "**|**".join(get_mods()) + "**|**Total**"
+            redditout += "\n:--%s" % ("|:--"*(len(get_mods())+1))
+            for action, times in actionstable.items():
+                redditout += "\n**%s**|%s|%i" % (action, "|".join([str(i) for i in times]), sum(times))
+            redditout += "\n**Total**|**%s**|**%i**" % ("**|**".join(["%i (%i%%)" % (i[0], i[1]) for i in discorddata.values()]), allactions)  
 
     longestusername = max([len(str(username)) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator()])
     discordout += "\n%-{0}s %s %s  %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "-"*(longestusername + 19))

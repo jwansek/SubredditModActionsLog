@@ -39,6 +39,7 @@ to make it possible to easily run the program with other subreddits
 ```
 {
     "production": 1,
+    "vertical": 1,
     "subredditstream": "subredditforlogging",
     "subredditpost": "subredditforstats",
     "database": "YourDatabasePath.db",
@@ -68,6 +69,17 @@ to make it possible to easily run the program with other subreddits
     }
 }
 ```
+
+`production` is a value of 0 or 1 which indicates which discord server to post in.
+A value of `0` might be useful for testing. `vertical` makes the output tables for 
+reddit output be shown in a vertical orientation, the same way as toolbox shows it.
+`subredditstream` is the name of the server you're looking at actions on. 
+`subredditpost` is the name of the subreddit to post detailed statistics to. It 
+could be the same as the stream subreddit, or a profile. `database` is the path to 
+a .db file which will be used as the database. If it doesn't exist, it will be
+created automatically. `bots` is a list which can be as long as you want. Usernames 
+in this list will be ignored when tables are made later. The rest are API keys you
+need to obtain.
 
 ## Setup tutorial
 
