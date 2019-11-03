@@ -11,7 +11,7 @@ import os
 
 class Database:
     def __init__(self):
-        self.connection = sqlite3.connect("ComedyHeavenModLog.db")
+        self.connection = sqlite3.connect("SYTCModLog.db")
         self.cursor = self.connection.cursor()
 
     def add_action(self, id, mod, action, date, permalink, notes, notes2):
@@ -37,7 +37,7 @@ def get_actions():
     db = Database()
     actions = {}
     weekactions = {}
-    subreddit = login.REDDIT.subreddit("comedyheaven")
+    subreddit = login.REDDIT.subreddit("SmallYTChannel")
     for mod in subreddit.moderator():
         mod  = str(mod)
         actions[mod] = []
@@ -69,7 +69,7 @@ def process_actions():
     discordout = "For a detailed list, click above.```"
     redditout = "\n\n#/r/ComedyHeaven moderator actions"
     discorddata = {}
-    for mod in [str(username) for username in login.REDDIT.subreddit("comedyheaven").moderator() if str(username) not in ["AutoModerator", "RepostSentinel", "MAGIC_EYE_BOT"]]:
+    for mod in [str(username) for username in login.REDDIT.subreddit("SmallYTChannel").moderator() if str(username) not in ["AutoModerator", "RepostSentinel", "MAGIC_EYE_BOT"]]:
         discorddata[mod] = []
     for i, periodactions in enumerate((actions, weekactions), 0):
         if i == 0:
@@ -102,7 +102,7 @@ def process_actions():
             redditout += "\n%s|%s" % (action, times)
         redditout += "\nTotal|%s" % len(allactions)
 
-    longestusername = max([len(str(username)) for username in login.REDDIT.subreddit("comedyheaven").moderator()])
+    longestusername = max([len(str(username)) for username in login.REDDIT.subreddit("SmallYTChannel").moderator()])
     discordout += "\n%-{0}s %s %s %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "-"*(longestusername + 18))
 
     for mod, data in discorddata.items():

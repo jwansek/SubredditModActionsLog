@@ -34,6 +34,8 @@ to make it possible to easily run the program with other subreddits
 
 * [ ] Make graph look better
 
+* [ ] Make `oldLogProg.py` work with `credentials.json` so the user doesn't have to change the code
+
 ## Your `credentials.json` should be something like the following:
 
 ```

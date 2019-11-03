@@ -8,6 +8,6 @@ else:
 
 def send_message(url, text, impath):
     webhook = DiscordWebhooks(WEBHOOK_URL)
-    webhook.set_content(title = "/r/ComedyHeaven Moderator Actions", content = url, description = text)
+    webhook.set_content(title = "/r/%s Moderator Actions" % login.data["subredditstream"], content = url, description = text)
     webhook.set_image(url = impath)
     webhook.send()
