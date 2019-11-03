@@ -32,7 +32,7 @@ class Database:
 
     def add_action(self, id, mod, action, date, permalink, notes, notes2):
         if id in self.get_ids():
-            print("\tskipped id ", id, "from",  datetime.datetime.fromtimestamp(date))
+            print(" skipped id ", id, "from",  datetime.datetime.fromtimestamp(date))
             return
         if permalink is None:
             permalink = ""
