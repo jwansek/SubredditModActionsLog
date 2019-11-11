@@ -10,6 +10,7 @@ import login
 import json
 import praw
 import time
+import math as maths
 import os
 
 matplotlib.use('agg')
@@ -17,6 +18,9 @@ import matplotlib.pyplot as plt
 
 class Database:
     def __init__(self):
+        """Class for accessing the database. If the database path is not found,
+        then it is automatically created and a table made.
+        """
         if not os.path.exists(os.path.join(os.getcwd(), login.data["database"])):
             self._create_table()
         else:
@@ -24,6 +28,8 @@ class Database:
             self.cursor = self.connection.cursor()
 
     def _create_table(self):
+        """Private function that makes the table if it isn't found
+        """
         self.connection = sqlite3.connect(login.data["database"])
         self.cursor = self.connection.cursor()
         print("Creating table...")
@@ -31,6 +37,17 @@ class Database:
         self.connection.commit()
 
     def add_action(self, id, mod, action, date, permalink, notes, notes2):
+        """Adds a moderation action to the database.
+        
+        Arguments:
+            id {str} -- Reddit's unique moderation action id
+            mod {str} -- The name of a moderator as a string
+            action {string} -- Reddit's action as returned from the api, as a string
+            date {int} -- Timestamp that the action took place at, as returned from the api
+            permalink {str} -- Permalink to the action, if applicable
+            notes {str} -- Extra potentially useful info returned by the API
+            notes2 {str} -- More potentially useful info returned by the API, added to notes 
+        """
         if id in self.get_ids():
             print(" skipped id ", id, "from",  datetime.datetime.fromtimestamp(date))
             return
@@ -46,10 +63,29 @@ class Database:
         self.connection.commit()
 
     def get_ids(self):
+        """Returns a list of all of the reddit api's mod action
+        ids.
+        
+        Returns:
+            list -- A list of reddit api mod actions
+        """
         self.cursor.execute("SELECT id FROM log;")
         return [i[0] for i in self.cursor.fetchall()]
 
     def get_graph_stats(self):
+        """Returns statistics about mod actions that the graph
+        needs to know: number of actions every day, number of
+        removals every day, number of approvals every day.
+        
+        Returns:
+            dict -- Dictionary of data in the form 
+                    {
+                        "all_actions": [(datetime.datetime, 134), (datetime.datetime, 1241), ...],
+                        "removelink": [(datetime.datetime, 134), (datetime.datetime, 1241), ...],
+                        "approvelink": [(datetime.datetime, 134), (datetime.datetime, 1241), ...]
+                    }
+                    Yes, it would be probably better to use a class for this.
+        """
         self.cursor.execute("SELECT mod, date FROM log;")
         all_actions = self.cursor.fetchall()
         all_actions = self._dates_to_groups([i[1] for i in all_actions if i[0] not in ["AutoModerator", "RepostSentinel", "MAGIC_EYE_BOT"]])
@@ -63,10 +99,25 @@ class Database:
         return {"all_actions": self.reorder_lists(all_actions), "removals": self.reorder_lists(removals), "approvelink": self.reorder_lists(approvelink)}
 
     def _dates_to_groups(self, dates):
+        """Private method to turn data from the database into a proper
+        format, converting timestamps into datetime.datetimes and 
+        counting the number of actions for each day.
+        
+        Arguments:
+            dates {list} -- A list of timestamps
+        
+        Returns:
+            list -- A list in the format [(datetime.datetime, 134), (datetime.datetime, 1241), ...]
+        """ 
         # convert to datetime, and then to date, count how many values for each unique date and sort by date
         return sorted(Counter([datetime.datetime.utcfromtimestamp(i).date() for i in dates]).items(), key = itemgetter(0))
 
     def get_filter_toggle(self):
+        """Returns the date at which filtered mode is toggled
+        
+        Returns:
+            list -- list of datetime.datetimes that filtered mode is toggled at
+        """
         self.cursor.execute("SELECT DISTINCT date FROM log WHERE action = 'editsettings' AND (notes = 'spam_links ' OR notes = 'spam_selfposts ');")
         return [datetime.datetime.utcfromtimestamp(i[0]) for i in self.cursor.fetchall()]
 
@@ -75,6 +126,12 @@ class Database:
         return [[i[0] for i in list_], [i[1] for i in list_]]
 
     def get_actions(self):
+        """Returns the number of actions for each moderator each day and rollover
+        actions for each week.
+        
+        Returns:
+            tuple -- tuple of mod actions in the format (dailyactions, weeklyactions)
+        """
         def get_actions_after(mod, cutoff):
             self.cursor.execute("SELECT mod, action FROM log WHERE date >= ? AND mod = ?;", (cutoff, mod))
             return self.cursor.fetchall()
@@ -91,6 +148,37 @@ class Database:
 
         return dailyactions, weeklyactions
 
+    def get_mods_last_action(self, mod):
+        """Returns how long ago a moderators actions were. If no actions are found,
+        then the date of the oldest action in the database is found and the '>'
+        symbol is used. automatically converts to a given time frame, e.g. minutes,
+        hours, and days.
+        
+        Arguments:
+            mod {str} -- The name of a moderator in a string format
+        
+        Returns:
+            str -- e.g. "12 hours"
+        """
+        noactions = False
+        self.cursor.execute("SELECT MAX(date) FROM log WHERE mod = ?", (mod, ))
+        actiontimestamp = self.cursor.fetchone()[0]
+        
+        if actiontimestamp is None:
+            noactions = True
+            self.cursor.execute("SELECT MIN(date) FROM log;")
+            actiontimestamp = self.cursor.fetchone()[0]
+
+        timeago = [round((time.time() - actiontimestamp) / 60), "mins"]
+        if timeago[0] >= 60:
+            timeago = [round(timeago[0] / 60), "hours"]
+        if timeago[0] >= 24:
+            timeago = [maths.ceil(timeago[0] / 24), "days"]
+        if noactions:
+            timeago = [">" + str(timeago[0]), timeago[1]]
+        
+        return str(timeago[0]) + " " + timeago[1]
+
 def onceaday():
     db = Database()
     start = time.time()
@@ -103,7 +191,7 @@ def onceaday():
     print("Uploaded graph to %s." % imgururl)
 
     print("Started processing data...")
-    redditout, discordout = process_actions(dailyactions, weeklyactions)
+    redditout, discordout = process_actions(dailyactions, weeklyactions, db)
     print("Finished processing data.")
 
     print("Started posting to reddit...")
@@ -125,10 +213,10 @@ def get_mods():
     """Returns a list of mods not in the blacklist"""
     return [str(username)for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator() if str(username) not in login.data["bots"]]
 
-def process_actions(actions, weekactions):
+def process_actions(actions, weekactions, db):
     discordout = "For a detailed list, click above.```"
     redditout = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
-    redditout2 = "\n\n#/r/%s moderator actions" % login.data["subredditstream"]
+    redditout2 = redditout
     discorddata = {}
     for mod in get_mods():
         discorddata[mod] = []
@@ -175,10 +263,10 @@ def process_actions(actions, weekactions):
             redditout += "\n**Total**|**%s**|**%i**" % ("**|**".join(["%i (%i%%)" % (i[0], i[1]) for i in discorddata.values()]), allactions)  
 
     longestusername = max([len(str(username)) for username in login.REDDIT.subreddit(login.data["subredditstream"]).moderator()])
-    discordout += "\n%-{0}s %s %s  %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "-"*(longestusername + 19))
+    discordout += "\n%-{0}s %s %s  %s %s %s\n%s".format(longestusername) % ("Moderator", "24h", "24h", "Week", "Week", "Last", "-"*(longestusername + 19 + 9))
 
     for mod, data in discorddata.items():
-        discordout += "\n%-{0}s %3s %2s%%  %4s %3s%%".format(longestusername) % (mod, data[0], data[1], data[2], data[3])
+        discordout += "\n%-{0}s %3s %2s%%  %4s %3s%% %s".format(longestusername) % (mod, data[0], data[1], data[2], data[3], db.get_mods_last_action(mod))
 
     discordout += "```\n(Bots aren't included)\nMade by jwnskanzkwk#9757"
     redditout += "\n\nIf your screen is to small to display, use <Ctrl+-> to zoom out.\n\nMade by /u/jwnskanzkwk. [Source code](https://github.com/jwansek/SubredditModActionsLog)"
@@ -296,4 +384,3 @@ def write_pid():
 if __name__ == "__main__":
     write_pid()
     stream_actions()
-    #onceaday()

@@ -19,7 +19,7 @@ but worked them all out at once. This was horribly ineffieient, requiring disk I
 for week old actions and sometimes taking ovre 40 minutes to run. The posting parts
 of it have been commented out, so you can use it to put actions in the database if
 the stream program goes down for a while.
-
+subredditstream
 ## TODO
 
 * [ ] Merge the code from `webhooks.py` and `login.py` into the main program,
@@ -34,7 +34,7 @@ to make it possible to easily run the program with other subreddits
 
 * [ ] Make graph look better
 
-* [ ] Make `oldLogProg.py` work with `credentials.json` so the user doesn't have to change the code
+* [x] Make `oldLogProg.py` work with `credentials.json` so the user doesn't have to change the code
 
 ## Your `credentials.json` should be something like the following:
 
