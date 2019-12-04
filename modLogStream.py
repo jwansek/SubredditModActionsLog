@@ -169,11 +169,11 @@ class Database:
             self.cursor.execute("SELECT MIN(date) FROM log;")
             actiontimestamp = self.cursor.fetchone()[0]
 
-        timeago = [round((time.time() - actiontimestamp) / 60), "mins"]
+        timeago = [round((time.time() - actiontimestamp) / 60), "m"]
         if timeago[0] >= 60:
-            timeago = [round(timeago[0] / 60), "hours"]
+            timeago = [round(timeago[0] / 60), "h"]
         if timeago[0] >= 24:
-            timeago = [maths.ceil(timeago[0] / 24), "days"]
+            timeago = [maths.ceil(timeago[0] / 24), "d"]
         if noactions:
             timeago = [">" + str(timeago[0]), timeago[1]]
         
