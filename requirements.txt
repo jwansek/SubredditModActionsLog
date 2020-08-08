@@ -3,3 +3,4 @@ Discord_Webhooks==1.0.4
 praw==6.3.1
 imgurpython==1.1.7
 matplotlib==3.0.2
+pymysql
