@@ -1,13 +1,7 @@
 credentials.json
-discord.txt
-reddit.txt
 *.db
-graph.py
 graph.png
-data.json
-weekactions.json
 .vscode/
-modLogStreamPID.json
 myddl.sql
 config.json
 

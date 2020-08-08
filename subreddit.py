@@ -107,13 +107,5 @@ if __name__ == "__main__":
         #     format_actions(db, subreddit_name, None, True)
         #     print("\n\n\n\n")
 
-        # print(format_actions_reddit(db, "comedyheaven", datetime.datetime(2020, 8, 1), False))
+        print(format_actions_reddit(db, "comedyheaven", datetime.datetime(2020, 8, 1), False))
 
-        import discord
-        discord.send_message(
-            "https://discordapp.com/api/webhooks/585930332885483531/_ubxciybQnTHqv17XECg9LL5I6r-Lhq2JZvB3q9-3Ln2Qv_sGkAKHDewP9Ct81oO1nMD",
-            "comedyheaven",
-            "https://redd.it/abcdef",
-            "https://i.imgur.com/2xnGazz.png",
-            format_actions_discord(db, "comedyheaven")
-        )
