@@ -1,111 +1,94 @@
 import numpy as np
 import database
 import datetime
+import logging
 import praw
 import time
 
 REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
 
+logging.basicConfig( 
+    format = "%(process)s\t[%(asctime)s]\t%(message)s", 
+    level = logging.INFO,
+    handlers=[
+        logging.FileHandler("onceaday.log"),
+        logging.StreamHandler()
+    ])
+
 def get_mods(subreddit, db):
+    """Get the moderators from a given subreddit.
+
+    Args:
+        subreddit (str): The subreddit to get mods
+        db (database.Database): This application's database.Database
+
+    Returns:
+        list: List of PRAW redditors who are mods
+    """
     return [
         i for i in REDDIT.subreddit(subreddit).moderator() 
         if str(i) not in db.get_bots(subreddit)
     ]
-    
-def format_actions_reddit(db, subreddit, since = None, vertical = False):
-    outobj = {}
-    mods = get_mods(subreddit, db)
-    grand_total = 0
 
-    #first of all we need to add zeros where there are no actions.
-    #but we don't know the actions at this point, so this isn't
-    #trivial. We use a dictionary:
-    for c, mod in enumerate(mods, 0):       
-        action_names_dealt_with = set()
-        for action_name, times in db.get_actions(subreddit, mod, since):
-            action_names_dealt_with.add(action_name)
-            grand_total += times
-            
-            if action_name not in outobj.keys():
-                # if its a new action, add a new key add pad value with zeros
-                outobj[action_name] = [0 for i in range(c)] + [times]
-            else:
-                outobj[action_name].append(times)
+def post_stats(subreddit_name, post_to, imurl, text):
+    submission = REDDIT.subreddit(post_to).submit(
+        "/r/%s Mod Actions: %s" % (subreddit_name, str(datetime.datetime.now())),
+        url = imurl
+    )
+    if len(text) >= 10000:
+        text = "Data too long to be shown; greater than 10000 characters"
+        logging.error("{ERROR} too many characters for reddit comment")
 
-        #if there's an action we haven't come across, add a zero for it
-        for undeltwith_action_name in set(outobj.keys()) - action_names_dealt_with:
-            outobj[undeltwith_action_name].append(0)
+    submission.reply(text).mod.distinguish(sticky = True)
+    return "https://redd.it/%s" % submission.id
 
-    outtable = [[r"Action\Moderator"] + [str(mod) for mod in mods] + ["Total"]]
-    for k, v in outobj.items():
-        outtable.append([k] + v + ["%i (%.1f%%)" % (sum(v), (sum(v) / grand_total) * 100)])
+def stream(db):
+    """Streams moderator actions from all subreddits and adds them
+    to the database as they come in.
 
-    outtable = np.array(outtable)
-    sums = list(np.sum(np.array(outtable[1:, 1:-1], dtype = int), axis = 0))
-    outtable = np.vstack([
-        outtable, 
-        ["Total"] + 
-        ["%i (%.1f%%)" % (sum_, (sum_ / grand_total) * 100) for sum_ in sums] + 
-        [grand_total]
-    ])
+    Args:
+        db (database.Database): A database object to add to
+    """
+    streams = [REDDIT.subreddit(s).mod.stream.log(pause_after=-1) for s in db.get_subreddits()]
+    while True:
+        for stream in streams:
+            for action in stream:
+                if action is None:
+                    break
 
-    #if vertical is True, mods will be on the side and actions will be at the top
-    if vertical:
-        outtable = np.fliplr(np.rot90(outtable, k=3))
-        outtable[0][0] = r"Moderator\Action"
+                db.add_action(
+                    str(action.subreddit), str(action.id), str(action.mod), action.action, 
+                    int(action.created_utc), action.target_permalink, action.details, action.description
+                )
 
-    outstr = ""
-    for c, row in enumerate(outtable, 1):
-        if c == 1 or c == len(outtable):
-            outstr += "**%s**\n" % "**|**".join(row)
-            if c == 1:
-                outstr += ":--%s\n" % ("|:--"*(len(row)-1))
-        else:
-            outstr += "**%s**|%s|**%s**\n" % (row[0], "|".join(row[1:-1]), row[-1])
+def archive(db, oldest_action):
+    """Archives previous moderator actions to the database. Can be used
+    when the stream function hasn't been working for a while.
 
-    return outstr
+    Args:
+        db (database.Database): A database object to add to
+        oldest_action (int): The oldest action in days to add before stopping
+    """
+    for subreddit in [REDDIT.subreddit(s) for s in db.get_subreddits()]:
+        for mod in subreddit.moderator():
+            mod = str(mod)
 
-def format_actions_discord(db, subreddit):
-    def get_percentage(actions, total):
-        try:
-            return round((actions / total) * 100)
-        except ZeroDivisionError:
-            return 0
+            for action in subreddit.mod.log(mod = mod, limit = None):
+                daysago = (time.time() - action.created_utc) / 60 / 60 / 24
+                if daysago > oldest_action:
+                    break
+                
+                db.add_action(
+                    str(action.subreddit), str(action.id), str(action.mod), action.action, 
+                    int(action.created_utc), action.target_permalink, action.details, action.description
+                )
 
-    outobj = {}
-    daily_total = 0
-    weekly_total = 0
-    daily_cutoff = datetime.datetime.fromtimestamp(time.time() - (60 * 60 * 24))
-    weekly_cutoff = datetime.datetime.fromtimestamp(time.time() - (60 * 60 * 24 * 7))
-    mods = [str(m) for m in get_mods(subreddit, db)]
-
-    daily_actions = db.get_total_mod_actions(mods, subreddit, since = daily_cutoff)
-    daily_total = sum(daily_actions.values())
-    weekly_actions = db.get_total_mod_actions(mods, subreddit, since = weekly_cutoff)
-    weekly_total = sum(weekly_actions.values())
-
-    longestusername = max([len(m) for m in mods])
-    outstr = "For a detailed list, click above.\n```\n"
-    outstr += "-"*(longestusername + 23) + "\n"
-    for mod in mods:
-        outstr += "%-{0}s %3s %2s%%  %4s %3s%% %3s\n".format(longestusername) % (
-            mod, 
-            daily_actions[mod], get_percentage(daily_actions[mod], daily_total), 
-            weekly_actions[mod], get_percentage(weekly_actions[mod], weekly_total), 
-            db.get_mods_last_action(subreddit, mod)
-        )
-    outstr += "-"*(longestusername + 23) + "\n"
-    outstr += "%{0}s%4s      %5s\n".format(longestusername) % ("Total:", daily_total, weekly_total)
-    outstr += "-"*(longestusername + 23) + "\n"
-    outstr += "```\n(Bots aren't included)"
-    
-    return outstr
-    
-if __name__ == "__main__":
+def main():
     with database.Database() as db:
-        # for subreddit_name in db.get_subreddits():
-        #     format_actions(db, subreddit_name, None, True)
-        #     print("\n\n\n\n")
+        stream(db)
 
-        print(format_actions_reddit(db, "comedyheaven", datetime.datetime(2020, 8, 1), False))
+
+if __name__ == "__main__":
+    main()
+
 

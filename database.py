@@ -85,13 +85,13 @@ class Database:
                 permalink, notes, reddit_id
             ))
         
-        print("/u/%-19s /r/%s %-15s %s %s" % (
+        print("/u/%-19s /r/%-15s %-15s %s %s" % (
             mod, subreddit, action, 
             datetime.datetime.fromtimestamp(timestamp).strftime("%b %d %Y %H:%M:%S"), notes
         ))      
         self.__connection.commit()
 
-    def get_graph_stats(self, subreddit, actions_to_get = [("all_actions", "blue")], since = None):
+    def get_graph_stats(self, subreddit, mod = None, actions_to_get = [("all_actions", "blue")], since = None):
         """Function for returning data from the database which will be used
         to make a matplotlib graph.
 
@@ -122,18 +122,101 @@ class Database:
             )
             AND `date` >= %s
             AND `action` IN (%s)
+            AND `mod` = %s
             GROUP BY DATE(`date`);
             """
             args = (subreddit, subreddit, since, action[0])
             if action[0] == "all_actions":
                 sql = sql.replace("AND `action` IN (%s)", "")
                 args = args[:-1]
+
+            if mod is None:
+                sql = sql.replace("AND `mod` = %s", "")
+            else:
+                args = args + (mod, )
             
             cursor.execute(sql, args)
             return cursor.fetchall()
 
         with self.__connection.cursor() as cursor:
             return {a: self.reorder_lists(get_action_stats(cursor, a)) for a in actions_to_get}
+
+    def get_bar_graph_stats(self, actions_to_get, mods, subreddit, since = None):
+        if since is None:
+            since = datetime.datetime(1970, 1, 1)
+        mods = [str(mod) for mod in mods]
+        actions = [i[0] for i in actions_to_get]
+
+        def get_misc(cursor):
+            cursor.execute("""
+            SELECT `mod`, COUNT(`mod`)
+            FROM `log`
+            WHERE `subreddit_id` = (
+                SELECT `subreddit_id` FROM `subreddits` WHERE `subreddit` = %s
+            )
+            AND `mod` IN %s
+            AND `action` NOT IN %s
+            AND `date` >= %s
+            GROUP BY `mod`
+            """, (subreddit, mods, actions, since))
+            out = list(cursor.fetchall())
+            #add zeroes
+            for mod in mods:
+                if mod not in [i[0] for i in out]:
+                    out.append((mod, 0))
+            return [i[1] for i in sorted(out, key = lambda i: mods.index(i[0]))]
+
+        def get_mods_actions(cursor, mod):
+            cursor.execute("""
+            SELECT `action`, COUNT(`action`)
+            FROM `log` WHERE `subreddit_id` = (
+                SELECT `subreddit_id` FROM `subreddits` WHERE `subreddit` = %s
+            )
+            AND `mod` = %s
+            AND `action` IN %s
+            AND `date` >= %s
+            GROUP BY `action`;
+            """, (subreddit, mod, actions, since))
+            out = [list(i) for i in cursor.fetchall()]
+
+            #add zeroes where there are no actions
+            for action in actions:
+                if out == []:
+                    out.append([action, 0])
+                else:
+                    if action not in [i[0] for i in out]:
+                        out.append([action, 0])
+         
+            return out
+
+        def to_matplotlib_format(orig, actions):
+            out = {action: [] for action in actions}
+            for i in orig:
+                for j in i:
+                    out[j[0]].append(j[1])
+            return out
+
+        with self.__connection.cursor() as cursor:
+            out = to_matplotlib_format([get_mods_actions(cursor, mod) for mod in mods], actions)
+            out["misc"] = get_misc(cursor)
+            actions_to_get.append(("misc", "grey"))
+            return [mods, out, {i[0]: i[1] for i in actions_to_get}]
+
+    def get_chart_colors(self, subreddit, chart):
+        assert chart in ["bar", "line"]
+        with self.__connection.cursor() as cursor:
+            cursor.execute("""
+            SELECT `chart_action_colours`.`action`, `chart_action_colours`.`color` 
+            FROM `chart_action_colours` 
+            INNER JOIN `chart_colours` 
+            ON `chart_colours`.`bar_colours` = `chart_action_colours`.`chart_color_id` 
+            WHERE `chart_colours`.`subreddit_id` = (
+                SELECT `subreddit_id` FROM `subreddits` WHERE `subreddit` = %s
+            )
+            AND `chart_colours`.`chart_type` = %s
+            ; 
+            """, (subreddit, chart))
+            return list(cursor.fetchall())
 
     def reorder_lists(self, list_):
         """Converts a list of lists into two lists that matplotlib likes"""
@@ -143,7 +226,7 @@ class Database:
         with self.__connection.cursor() as cursor:
             cursor.execute("""
             SELECT IFNULL(
-                FLOOR((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(`date`))) / 60 / 60 / 24), 
+                CONCAT(FLOOR((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(`date`))) / 60 / 60 / 24), "d"), 
                 "∞"
             ) 
             FROM `log` WHERE `mod` = %s AND `subreddit_id` = (
@@ -200,6 +283,25 @@ class Database:
             cursor.execute("SELECT `subreddit` FROM `subreddits`;")
             return [i[0] for i in cursor.fetchall()]
 
+    def get_webhook(self, subreddit, testing = False):
+        with self.__connection.cursor() as cursor:
+            if testing:
+                cursor.execute("""
+                SELECT `testing_webhook` FROM `subreddits` WHERE `subreddit` = %s
+                """, (subreddit, ))
+            else:
+                cursor.execute("""
+                SELECT `discord_webhook` FROM `subreddits` WHERE `subreddit` = %s
+                """, (subreddit, ))
+            return cursor.fetchone()[0]
+
+    def get_posting_subreddit(self, subreddit):
+        with self.__connection.cursor() as cursor:
+            cursor.execute("""
+            SELECT `post` FROM `subreddits` WHERE `subreddit` = %s
+            """, (subreddit, ))
+            return cursor.fetchone()[0]
+
     def get_total_mod_actions(self, moderators, subreddit, since = None):
         if since is None:
             since = datetime.datetime(1970, 1, 1)
@@ -226,9 +328,12 @@ class Database:
 if __name__ == "__main__":
     with Database() as db:
         # db.migrate_sqlite("SYTCModLog.db", "SmallYTChannel")
-        # graph.draw_graph(db.get_graph_stats("comedyheaven", [("removelink", "red"), ("approvelink", "green")]))
-        print(db.get_mods_last_action("comedyheaven", "chompythebeast"))
-        # for i in db.get_actions("SmallYTChannel", "jwnskanzkwk"):
-        #     print(i)
-
-        # print(db.get_total_mod_actions(["jwnskanzkwk", "doctopi"]))
+        
+        import subreddit
+        import time
+        print(db.get_bar_graph_stats(
+            db.get_chart_colors("SmallYTChannel", "bar"), 
+            subreddit.get_mods("SmallYTChannel", db),
+            "SmallYTChannel",
+            # datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
+        ))
