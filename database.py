@@ -331,13 +331,13 @@ class Database:
 
 if __name__ == "__main__":
     with Database() as db:
-        # db.migrate_sqlite("SYTCModLog.db", "SmallYTChannel")
+        db.migrate_sqlite("ComedyHeavenModLog.db", "comedyheaven")
         
-        import subreddit
-        import time
-        print(db.get_bar_graph_stats(
-            db.get_chart_colors("SmallYTChannel", "bar"), 
-            subreddit.get_mods("SmallYTChannel", db),
-            "SmallYTChannel",
-            datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
-        ))
+        #import subreddit
+        #import time
+        #print(db.get_bar_graph_stats(
+        #    db.get_chart_colors("SmallYTChannel", "bar"), 
+        #    subreddit.get_mods("SmallYTChannel", db),
+        #    "SmallYTChannel",
+        #    datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
+        #))
