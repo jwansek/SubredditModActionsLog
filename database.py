@@ -142,6 +142,8 @@ class Database:
             return {a: self.reorder_lists(get_action_stats(cursor, a)) for a in actions_to_get}
 
     def get_bar_graph_stats(self, actions_to_get, mods, subreddit, since = None):
+        assert len(actions_to_get) >= 1
+        assert len(actions_to_get[0]) == 2
         if since is None:
             since = datetime.datetime(1970, 1, 1)
         mods = [str(mod) for mod in mods]
@@ -167,7 +169,7 @@ class Database:
             return [i[1] for i in sorted(out, key = lambda i: mods.index(i[0]))]
 
         def get_mods_actions(cursor, mod):
-            cursor.execute("""
+            sql = """
             SELECT `action`, COUNT(`action`)
             FROM `log` WHERE `subreddit_id` = (
                 SELECT `subreddit_id` FROM `subreddits` WHERE `subreddit` = %s
@@ -176,7 +178,9 @@ class Database:
             AND `action` IN %s
             AND `date` >= %s
             GROUP BY `action`;
-            """, (subreddit, mod, actions, since))
+            """
+            # print(sql % (subreddit, mod, actions, since))
+            cursor.execute(sql, (subreddit, mod, actions, since))
             out = [list(i) for i in cursor.fetchall()]
 
             #add zeroes where there are no actions
@@ -335,5 +339,5 @@ if __name__ == "__main__":
             db.get_chart_colors("SmallYTChannel", "bar"), 
             subreddit.get_mods("SmallYTChannel", db),
             "SmallYTChannel",
-            # datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
+            datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
         ))

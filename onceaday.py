@@ -174,6 +174,7 @@ def post_subreddit_stats(db, subreddit_name, testing = False):
     a_week_ago = datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
     a_month_ago = datetime.datetime.fromtimestamp(time.time() - 60*60*24*31)
     graph_url = post_graph(draw_graph(db, subreddit_name, a_month_ago, a_week_ago), subreddit_name)
+    subreddit.logging.info("Uploaded graph to %s" % graph_url)
 
     reddit_text = "## /r/%s moderator actions\n\n### In the last 24h:\n\n" % subreddit_name
     reddit_text += format_actions_reddit(db, subreddit_name, since = a_day_ago, vertical=True)
@@ -199,9 +200,11 @@ def post_subreddit_stats(db, subreddit_name, testing = False):
         subreddit.logging.info("Posted to discord.")
 
 def main():
+    starttime = time.time()
     with database.Database() as db:
         for subreddit_name in db.get_subreddits():
             post_subreddit_stats(db, subreddit_name, testing = True)
+    subreddit.logging.info("Operation completed. (%s)." % (str(datetime.timedelta(seconds = time.time() - starttime))))
 
 if __name__ == "__main__":
     main()
