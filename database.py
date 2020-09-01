@@ -1,7 +1,7 @@
 import datetime
 import pymysql
 import sqlite3
-import graph
+# import graph
 import json
 
 with open("config.json", "r") as f:
