@@ -4,6 +4,7 @@ graph.png
 .vscode/
 myddl.sql
 config.json
+sml.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

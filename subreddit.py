@@ -1,9 +1,10 @@
-# import numpy as np
 import database
 import datetime
 import logging
 import praw
 import time
+import json
+import os
 
 REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
 
@@ -84,9 +85,13 @@ def archive(db, oldest_action):
                 )
 
 def main():
+    write_pid()
     with database.Database() as db:
         stream(db)
 
+def write_pid():
+    with open("sml.json", "w") as f:
+        json.dump(os.getpid(), f)
 
 if __name__ == "__main__":
     main()
