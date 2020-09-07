@@ -1,7 +1,8 @@
+import functools
 import datetime
 import pymysql
 import sqlite3
-# import graph
+import random
 import json
 
 with open("config.json", "r") as f:
@@ -60,6 +61,17 @@ class Database:
             cursor.execute("SELECT reddit_id FROM log;")
             return [i[0] for i in cursor.fetchall()]
 
+    def database_call(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                func(self, *args, **kwargs)
+            except pymysql.err.OperationalError as e:
+                print("WARNING", e)
+                func(self, *args, **kwargs)
+        return wrapper
+
+    @database_call
     def add_action(self, subreddit, reddit_id, mod, action, timestamp, permalink, notes, notes2):
         if self.reddit_id_in_db(reddit_id):
             print(" Skipped action from /r/%s by /u/%s at %s" % (
@@ -331,7 +343,7 @@ class Database:
 
 if __name__ == "__main__":
     with Database() as db:
-        db.migrate_sqlite("ComedyHeavenModLog.db", "comedyheaven")
+        # db.migrate_sqlite("ComedyHeavenModLog.db", "comedyheaven")
         
         #import subreddit
         #import time
@@ -341,3 +353,6 @@ if __name__ == "__main__":
         #    "SmallYTChannel",
         #    datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
         #))
+        import time
+
+        db.add_action("SmallYTChannel", "abcdef", "jwnskanzkwk", "test", int(time.time()), "redd.it/abcdef", "", "")
