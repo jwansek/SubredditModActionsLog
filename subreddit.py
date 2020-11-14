@@ -52,15 +52,21 @@ def stream(db):
     """
     streams = [REDDIT.subreddit(s).mod.stream.log(pause_after=-1) for s in db.get_subreddits()]
     while True:
-        for stream in streams:
-            for action in stream:
-                if action is None:
-                    break
+        try:
+            for stream in streams:
+                for action in stream:
+                    if action is None:
+                        break
 
-                db.add_action(
-                    str(action.subreddit), str(action.id), str(action.mod), action.action, 
-                    int(action.created_utc), action.target_permalink, action.details, action.description
-                )
+                    db.add_action(
+                        str(action.subreddit), str(action.id), str(action.mod), action.action, 
+                        int(action.created_utc), action.target_permalink, action.details, action.description
+                    )
+        except Exception as e:
+            print("[ERROR] %s" % e)
+            db.add_error("ERROR", str(e))
+            time.sleep(5)
+            continue
 
 def archive(db, oldest_action):
     """Archives previous moderator actions to the database. Can be used
@@ -85,13 +91,8 @@ def archive(db, oldest_action):
                 )
 
 def main():
-    write_pid()
     with database.Database() as db:
         stream(db)
-
-def write_pid():
-    with open("sml.json", "w") as f:
-        json.dump(os.getpid(), f)
 
 if __name__ == "__main__":
     main()

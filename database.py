@@ -103,6 +103,14 @@ class Database:
         ))      
         self.__connection.commit()
 
+    @database_call
+    def add_error(self, status, text):
+        with self.__connection.cursor() as cursor:
+            cursor.execute("""
+            INSERT INTO `error_log`(`status`, `text`) VALUES (%s, %s);
+            """, (status, text))
+        self.__connection.commit()
+
     def get_graph_stats(self, subreddit, mod = None, actions_to_get = [("all_actions", "blue")], since = None):
         """Function for returning data from the database which will be used
         to make a matplotlib graph.
@@ -343,7 +351,7 @@ class Database:
 
 if __name__ == "__main__":
     with Database() as db:
-        db.migrate_sqlite("SYTCModLog.db", "SmallYTChannel")
+        # db.migrate_sqlite("SYTCModLog.db", "SmallYTChannel")
         
         #import subreddit
         #import time
@@ -356,3 +364,5 @@ if __name__ == "__main__":
         # import time
 
         # db.add_action("SmallYTChannel", "abcdef", "jwnskanzkwk", "test", int(time.time()), "redd.it/abcdef", "", "")
+
+        db.add_error("ERROR", "invalid_grant error processing request")

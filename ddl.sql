@@ -62,3 +62,9 @@ INSERT INTO `chart_colours` VALUES (1, 1, "bar");
 INSERT INTO `chart_colours` VALUES (1, 3, "bar");
 INSERT INTO `chart_colours` VALUES (1, 2, "bar");
 
+CREATE TABLE IF NOT EXISTS `error_log` (
+    `error_id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `status` VARCHAR(15) NOT NULL,
+    `text` VARCHAR(100) NOT NULL,
+    `datetime` DATETIME NOT NULL DEFAULT NOW()
+);
