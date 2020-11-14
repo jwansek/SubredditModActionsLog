@@ -343,7 +343,7 @@ class Database:
 
 if __name__ == "__main__":
     with Database() as db:
-        # db.migrate_sqlite("ComedyHeavenModLog.db", "comedyheaven")
+        db.migrate_sqlite("SYTCModLog.db", "SmallYTChannel")
         
         #import subreddit
         #import time
@@ -353,6 +353,6 @@ if __name__ == "__main__":
         #    "SmallYTChannel",
         #    datetime.datetime.fromtimestamp(time.time() - 60*60*24*8)
         #))
-        import time
+        # import time
 
-        db.add_action("SmallYTChannel", "abcdef", "jwnskanzkwk", "test", int(time.time()), "redd.it/abcdef", "", "")
+        # db.add_action("SmallYTChannel", "abcdef", "jwnskanzkwk", "test", int(time.time()), "redd.it/abcdef", "", "")
