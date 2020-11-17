@@ -6,7 +6,6 @@ import time
 import json
 import os
 
-REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
 
 logging.basicConfig( 
     format = "%(process)s\t[%(asctime)s]\t%(message)s", 
@@ -65,7 +64,8 @@ def stream(db):
         except Exception as e:
             print("[ERROR] %s" % e)
             db.add_error("ERROR", str(e))
-            time.sleep(5)
+            time.sleep(60)
+            REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
             continue
 
 def archive(db, oldest_action):
