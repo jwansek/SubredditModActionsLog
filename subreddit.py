@@ -7,6 +7,12 @@ import json
 import os
 
 
+REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
+#global REDDIT attribute.
+#only implemented so that it can be imported elsewhere.
+#don't use this as the main stream object, so we can reset
+#it automatically when there's an error.
+
 logging.basicConfig( 
     format = "%(process)s\t[%(asctime)s]\t%(message)s", 
     level = logging.INFO,
@@ -42,31 +48,24 @@ def post_stats(subreddit_name, post_to, imurl, text):
     submission.reply(text).mod.distinguish(sticky = True)
     return "https://redd.it/%s" % submission.id
 
-def stream(db):
+def stream(db, reddit):
     """Streams moderator actions from all subreddits and adds them
     to the database as they come in.
 
     Args:
         db (database.Database): A database object to add to
     """
-    streams = [REDDIT.subreddit(s).mod.stream.log(pause_after=-1) for s in db.get_subreddits()]
+    streams = [reddit.subreddit(s).mod.stream.log(pause_after=-1) for s in db.get_subreddits()]
     while True:
-        try:
-            for stream in streams:
-                for action in stream:
-                    if action is None:
-                        break
+        for stream in streams:
+            for action in stream:
+                if action is None:
+                    break
 
-                    db.add_action(
-                        str(action.subreddit), str(action.id), str(action.mod), action.action, 
-                        int(action.created_utc), action.target_permalink, action.details, action.description
-                    )
-        except Exception as e:
-            print("[ERROR] %s" % e)
-            db.add_error("ERROR", str(e))
-            time.sleep(60)
-            REDDIT = praw.Reddit(**database.CONFIG["redditapi"])
-            continue
+                db.add_action(
+                    str(action.subreddit), str(action.id), str(action.mod), action.action, 
+                    int(action.created_utc), action.target_permalink, action.details, action.description
+                )
 
 def archive(db, oldest_action):
     """Archives previous moderator actions to the database. Can be used
@@ -91,8 +90,18 @@ def archive(db, oldest_action):
                 )
 
 def main():
+    reddit = praw.Reddit(**database.CONFIG["redditapi"])
     with database.Database() as db:
-        stream(db)
+        try:
+            stream(db, reddit)
+        except Exception as e:
+            db.add_error("ERROR", str(e))
+            logging.info("[RUNTIME ERROR] %s" % e)
+            time.sleep(60)
+            main()
+
+
+
 
 if __name__ == "__main__":
     main()
