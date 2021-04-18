@@ -7,4 +7,9 @@ services:
             dockerfile: Dockerfile
         image: jwansek/subredditmodactionslog
         network_mode: "host"
+    cron:
+        build:
+            context: .
+            dockerfile: OADDockerfile
+        network_mode: host
 

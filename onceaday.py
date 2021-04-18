@@ -1,5 +1,6 @@
 import os
-os.chdir("/home/eden/Documents/SubredditModActionsLog")
+import sys
+os.chdir(sys.argv[1])
 
 import numpy as np
 import imgurpython
