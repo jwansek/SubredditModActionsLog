@@ -1,5 +1,5 @@
 import os
-os.chdir("/home/eden/SubredditModActionsLog")
+os.chdir("/home/eden/Documents/SubredditModActionsLog")
 
 import numpy as np
 import imgurpython

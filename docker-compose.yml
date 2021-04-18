@@ -5,6 +5,6 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        image: jwansek/SubredditModActionsLog
-        net: host
+        image: jwansek/subredditmodactionslog
+        network_mode: "host"
 
