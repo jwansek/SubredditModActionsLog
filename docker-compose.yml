@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+    sml:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: jwansek/SubredditModActionsLog
+        net: host
+
