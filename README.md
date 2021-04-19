@@ -13,8 +13,8 @@ Graph example | Discord example
 The program is designed to be run in a docker container.
 
  - Set up a MySQL database and build tables, like `ddl.sql`
- - `sudo docker build -t jwansek/subredditmodlog .`
- - `sudo docker run -d --name subredditmodlog --net=host jwansek/subredditmodlog`
+ - `sudo docker-compose build`
+ - `sudo docker-compose up -d`
 
 ## Your `config.json` should be something like the following:
 
