@@ -4,7 +4,7 @@ RUN apt-get update -y
 RUN apt-get install -y tzdata python3-pip python-dev build-essential pkg-config cron
 COPY . /app
 WORKDIR /app
-COPY crontab /etc/cron.d/oad-crontab
+COPY onceaday/crontab /etc/cron.d/oad-crontab
 RUN chmod 0644 /etc/cron.d/oad-crontab && crontab /etc/cron.d/oad-crontab
-RUN pip3 install -r oadrequirements.txt
+RUN pip3 install -r onceaday/requirements.txt
 ENTRYPOINT ["cron", "-f"]

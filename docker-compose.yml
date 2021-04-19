@@ -9,7 +9,9 @@ services:
         network_mode: "host"
     cron:
         build:
-            context: .
-            dockerfile: OADDockerfile
+            context: ./onceaday
+            dockerfile: Dockerfile
         network_mode: host
+        volumes:
+            - ./onceaday/onceaday.log:/app/onceaday/onceaday.log
 

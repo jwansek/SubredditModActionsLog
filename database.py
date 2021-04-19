@@ -4,8 +4,14 @@ import pymysql
 import sqlite3
 import random
 import json
+import os
 
-with open("config.json", "r") as f:
+if os.path.split(os.getcwd())[-1] == "onceaday":
+    configpath = "../config.json"
+else:
+    configpath = "config.json"
+
+with open(configpath, "r") as f:
     CONFIG = json.load(f)
 
 class Database:
