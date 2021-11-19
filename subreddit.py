@@ -45,7 +45,7 @@ def post_stats(subreddit_name, post_to, imurl, text):
         text = "Data too long to be shown; greater than 10000 characters"
         logging.error("{ERROR} too many characters for reddit comment")
 
-    submission.reply(text).mod.distinguish(sticky = True)
+    #submission.reply(text).mod.distinguish(sticky = True)
     return "https://redd.it/%s" % submission.id
 
 def stream(db, reddit):
