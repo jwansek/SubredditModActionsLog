@@ -24,7 +24,7 @@ def send_message(webhookurl, subreddit, link, image, text):
         description = text
     )
     webhook.set_footer(
-        text='jwnskanzkwk#9757\nhttps://github.com/jwansek/SubredditModActionsLog', 
+        text='@eden#7623\nhttps://github.com/jwansek/SubredditModActionsLog', 
         icon_url='https://avatars1.githubusercontent.com/u/37976823?s=460&u=1739eabb8af515eccf259a9eb5ad7f44ac6aed85&v=4'
     )
     webhook.send()
