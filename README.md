@@ -16,6 +16,10 @@ The program is designed to be run in a docker container.
  - `sudo docker-compose build`
  - `sudo docker-compose up -d`
 
+To run the archive script:
+
+`sudo docker run -it --entrypoint python3 --network host --rm jwansek/subredditmodactionslog archive.py 3`
+
 ## Your `config.json` should be something like the following:
 
 ```
