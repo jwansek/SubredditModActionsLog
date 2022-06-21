@@ -205,12 +205,16 @@ def post_subreddit_stats(db, subreddit_name, testing = False):
         )
         subreddit.logging.info("Posted to discord.")
 
-def main():
+def main(testing = False):
     starttime = time.time()
     with database.Database() as db:
         for subreddit_name in db.get_subreddits():
-            post_subreddit_stats(db, subreddit_name, testing = False)
+            post_subreddit_stats(db, subreddit_name, testing)
     subreddit.logging.info("Operation completed. (%s)." % (str(datetime.timedelta(seconds = time.time() - starttime))))
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 2:
+        subreddit.logging.info("Running in testing mode...")
+        main(testing=True)
+    else:
+        main()

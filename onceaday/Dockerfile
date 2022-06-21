@@ -1,7 +1,6 @@
-FROM debian:latest
+FROM jwansek/subredditmodactionslog
 MAINTAINER Eden Attenborough "eddie.atten.ea29@gmail.com"
-RUN apt-get update -y
-RUN apt-get install -y tzdata python3-pip python-dev build-essential pkg-config cron  libjpeg-dev zlib1g-dev
+RUN apt-get install -y cron 
 COPY . /app
 WORKDIR /app
 COPY onceaday/crontab /etc/cron.d/oad-crontab

@@ -41,11 +41,20 @@ def post_stats(subreddit_name, post_to, imurl, text):
         "/r/%s Mod Actions: %s" % (subreddit_name, str(datetime.datetime.now())),
         url = imurl
     )
-    if len(text) >= 10000:
+    try:
+        submission.mod.sfw()
+    except Exception as e:
+        logging.info("Failed to sfw submission with error %s" % e)
+    
+    if len(text) >= 10000:  
         text = "Data too long to be shown; greater than 10000 characters"
         logging.error("{ERROR} too many characters for reddit comment")
 
-    #submission.reply(text).mod.distinguish(sticky = True)
+    reply = submission.reply(text)
+    try:
+        reply.mod.distinguish(sticky = True)
+    except Exception as e:
+        logging.info("Failed to distinguish comment with error %s" % e)
     return "https://redd.it/%s" % submission.id
 
 def stream(db, reddit):

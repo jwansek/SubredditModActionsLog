@@ -11,6 +11,7 @@ services:
         build:
             context: .
             dockerfile: ./onceaday/Dockerfile
+        image: jwansek/subredditmodactionslogoad
         network_mode: host
         volumes:
             - ./onceaday/onceaday.log:/app/onceaday/onceaday.log

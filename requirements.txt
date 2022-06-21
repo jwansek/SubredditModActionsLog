@@ -1,6 +1,6 @@
 # numpy==1.16.4
 # matplotlib==3.0.2
 Discord_Webhooks==1.0.4
-praw==7.1.0
+praw
 PyMySQL==0.9.3
 imgurpython==1.1.7
