@@ -20,6 +20,10 @@ To run the archive script:
 
 `sudo docker run -it --entrypoint python3 --network host --rm jwansek/subredditmodactionslog archive.py 3`
 
+To manually post statistics (otherwise once a day at UTC+0)
+
+`sudo docker run -it --entrypoint python3 --network host --rm jwansek/subredditmodactionslogoad /app/onceaday/onceaday.py /app/onceaday`
+
 ## Your `config.json` should be something like the following:
 
 ```
